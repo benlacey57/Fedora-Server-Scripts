@@ -1,17 +1,21 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# Script: disk-manager.sh
+# Script: utils/disk-manager.sh
 # Description: Disk Operations, Partitioning, LUKS Encryption & Fstab Suite
 # ==============================================================================
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CONFIG_JSON="${SCRIPT_DIR}/config.json"
+ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+CONFIG_JSON="${ROOT_DIR}/config.json"
+STORAGE_JSON="${ROOT_DIR}/config/storage.json"
 BACKUP_DIR="/config/storage"
 KEY_BACKUP_DIR="/config/storage/keys"
 
-if [[ -f "${SCRIPT_DIR}/lib.sh" ]]; then
+if [[ -f "${ROOT_DIR}/lib.sh" ]]; then
+    source "${ROOT_DIR}/lib.sh"
+elif [[ -f "${SCRIPT_DIR}/lib.sh" ]]; then
     source "${SCRIPT_DIR}/lib.sh"
 else
     echo "ERROR: Shared library lib.sh missing!" >&2
@@ -22,6 +26,7 @@ check_root
 check_dependency "lsblk"
 check_dependency "findmnt"
 check_dependency "cryptsetup"
+check_dependency "jq"
 
 # Docbloc: Backup active /etc/fstab and crypttab to /config/storage
 backup_storage_configs() {
@@ -32,8 +37,9 @@ backup_storage_configs() {
     mkdir -p "${dest}"
     [[ -f /etc/fstab ]] && cp /etc/fstab "${dest}/fstab.bak"
     [[ -f /etc/crypttab ]] && cp /etc/crypttab "${dest}/crypttab.bak" 2>/dev/null || true
+    [[ -f "$STORAGE_JSON" ]] && cp "$STORAGE_JSON" "${dest}/storage.json.bak" 2>/dev/null || true
 
-    log_msg "INFO" "Storage configurations (fstab/crypttab) backed up to ${dest}"
+    log_msg "INFO" "Storage configurations (fstab/crypttab/storage.json) backed up to ${dest}"
 }
 
 # Docbloc: Display summary box with warnings and prompt for user confirmation
@@ -84,24 +90,27 @@ show_disk_overview() {
         python3 - <<EOF
 import json, sys
 
-data = json.loads('''${json_data}''')
-devices = data.get('blockdevices', [])
+try:
+    data = json.loads('''${json_data}''')
+    devices = data.get('blockdevices', [])
 
-def print_dev(dev, indent=""):
-    name = "/dev/" + dev.get('name', '')
-    model = dev.get('model') or dev.get('label') or "N/A"
-    size = dev.get('size', 'N/A')
-    dtype = dev.get('type', 'N/A')
-    fstype = dev.get('fstype') or "N/A"
-    mp = dev.get('mountpoint') or "Unmounted"
-    
-    print(f"{indent}{name:<14} {model[:19]:<20} {size:<10} {dtype:<8} {fstype:<10} {mp:<22}")
-    
-    for child in dev.get('children', []):
-        print_dev(child, indent="  ├─ ")
+    def print_dev(dev, indent=""):
+        name = "/dev/" + dev.get('name', '')
+        model = dev.get('model') or dev.get('label') or "N/A"
+        size = dev.get('size', 'N/A')
+        dtype = dev.get('type', 'N/A')
+        fstype = dev.get('fstype') or "N/A"
+        mp = dev.get('mountpoint') or "Unmounted"
+        
+        print(f"{indent}{name:<14} {model[:19]:<20} {size:<10} {dtype:<8} {fstype:<10} {mp:<22}")
+        
+        for child in dev.get('children', []):
+            print_dev(child, indent="  ├─ ")
 
-for d in devices:
-    print_dev(d)
+    for d in devices:
+        print_dev(d)
+except Exception as e:
+    print(f"Error parsing block devices: {e}")
 EOF
     else
         lsblk -o NAME,MODEL,SIZE,TYPE,FSTYPE,MOUNTPOINT
@@ -407,17 +416,17 @@ main_menu() {
         echo "1) Refresh Disk Overview"
         echo "2) Mount Disk / Partition"
         echo "3) Unmount Disk / Partition"
-        echo "4) Partition Disk (fdisk)"
+        echo "4) Partition Disk"
         echo "5) Format Disk / Change Filesystem"
         echo "6) Encrypt Full Disk (LUKS)"
         echo "7) Encrypt Partition (LUKS)"
         echo "8) Change Encrypted Drive Password"
         echo "9) Decrypt Disk"
-        echo "10) Backup LUKS Storage Keys & Headers"
-        echo "11) Disk Space Usage Audit (df -h)"
+        echo "10) Backup Disk Encryption Keys"
+        echo "11) Disk Space Usage Audit"
         echo "12) Run SMART Health Checks"
-        echo "13) Add Partition Entry to /etc/fstab"
-        echo "14) Backup Storage Configurations (fstab/crypttab)"
+        echo "13) Add Partition to /etc/fstab"
+        echo "14) Backup Storage Configuration"
         echo "15) Exit"
         read -rp "Select Option [1-15]: " CHOICE
 
