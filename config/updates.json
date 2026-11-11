@@ -1,0 +1,15 @@
+{
+  "update_settings": {
+    "upgrade_type": "default",
+    "apply_updates": true,
+    "reboot_policy": "when-changed",
+    "random_sleep_seconds": 300
+  },
+  "schedule": {
+    "timer_frequency": "daily",
+    "on_calendar": "*-*-* 03:30:00"
+  },
+  "logging": {
+    "log_file": "/var/log/homelab-updates.log"
+  }
+}
