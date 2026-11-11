@@ -1,16 +1,18 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # Script: firewall-manager.sh
-# Description: Modular Firewall Audit & Docker Exposed Port Sync Tool
+# Description: Interactive UFW Firewall Rule Management & Socket Auditor
 # ==============================================================================
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CONFIG_JSON="${SCRIPT_DIR}/config.json"
+CONFIG_JSON="${SCRIPT_DIR}/../config.json"
 BACKUP_DIR="/config/firewall"
 
-if [[ -f "${SCRIPT_DIR}/lib.sh" ]]; then
+if [[ -f "${SCRIPT_DIR}/../lib.sh" ]]; then
+    source "${SCRIPT_DIR}/../lib.sh"
+elif [[ -f "${SCRIPT_DIR}/lib.sh" ]]; then
     source "${SCRIPT_DIR}/lib.sh"
 else
     echo "ERROR: Shared library lib.sh missing!" >&2
@@ -18,78 +20,126 @@ else
 fi
 
 check_root
+check_dependency "ufw"
 
-# Detect active firewall backend
-FW_BACKEND="none"
-if command -v firewall-cmd &>/dev/null && systemctl is-active --quiet firewalld; then
-    FW_BACKEND="firewalld"
-elif command -v ufw &>/dev/null && ufw status | grep -q "Status: active"; then
-    FW_BACKEND="ufw"
-fi
-
-# Docbloc: Backup active firewall rules to /config/firewall
 backup_firewall_rules() {
     local timestamp dest
     timestamp=$(date +%Y%m%d_%H%M%S)
     dest="${BACKUP_DIR}/firewall_backup_${timestamp}"
 
     mkdir -p "${dest}"
-    log_msg "INFO" "Backing up active firewall rules to ${dest}..."
+    ufw status verbose > "${dest}/ufw_status.bak"
+    [[ -d /etc/ufw ]] && cp -r /etc/ufw "${dest}/etc_ufw_dir" 2>/dev/null || true
 
-    if [[ "$FW_BACKEND" == "firewalld" ]]; then
-        firewall-cmd --runtime-to-permanent 2>/dev/null || true
-        cp -r /etc/firewalld/ "${dest}/" 2>/dev/null || true
-        firewall-cmd --list-all > "${dest}/firewalld_active_rules.txt"
-    elif [[ "$FW_BACKEND" == "ufw" ]]; then
-        cp -r /etc/ufw/ "${dest}/" 2>/dev/null || true
-        ufw status verbose > "${dest}/ufw_active_rules.txt"
-    else
-        iptables-save > "${dest}/iptables_dump.txt" 2>/dev/null || true
-    fi
-
-    log_msg "INFO" "Firewall rules successfully backed up."
+    log_msg "INFO" "Firewall configuration backed up to ${dest}"
 }
 
-# Docbloc: Display active firewall status and exposed listening ports
-show_firewall_overview() {
-    print_banner "FIREWALL OVERVIEW & LISTENING PORTS (${FW_BACKEND^^})"
+confirm_action() {
+    local action="$1"
+    local target="$2"
+    local summary="$3"
+    local is_destructive="${4:-false}"
 
-    if [[ "$FW_BACKEND" == "firewalld" ]]; then
-        echo -e "${COLOR_CYAN}Active FirewallD Default Zone Rules:${COLOR_RESET}"
-        firewall-cmd --list-all | sed 's/^/  /'
-    elif [[ "$FW_BACKEND" == "ufw" ]]; then
-        echo -e "${COLOR_CYAN}Active UFW Status:${COLOR_RESET}"
-        ufw status verbose | sed 's/^/  /'
+    echo -e "\n${COLOR_ORANGE}================================================================================${COLOR_RESET}"
+    echo -e "${COLOR_ORANGE}                         ACTION CONFIRMATION & SUMMARY                          ${COLOR_RESET}"
+    echo -e "${COLOR_ORANGE}================================================================================${COLOR_RESET}"
+    printf "%-20s : %s\n" "Requested Action" "${action}"
+    printf "%-20s : %s\n" "Target Port/Rule" "${target}"
+    printf "%-20s : %s\n" "Summary of Changes" "${summary}"
+    
+    if [[ "$is_destructive" == "true" ]]; then
+        echo -e "${COLOR_RED}WARNING: THIS CHANGES SYSTEM FIREWALL ACCESS CONTROL! ACCESS MAY BE BLOCKED.${COLOR_RESET}"
+        echo -e "${COLOR_ORANGE}================================================================================${COLOR_RESET}"
+        read -rp "Type 'CONFIRM' to execute this action: " CONFIRM_INPUT
+        if [[ "$CONFIRM_INPUT" != "CONFIRM" ]]; then
+            log_msg "WARN" "Operation canceled by user."
+            return 1
+        fi
     else
-        log_msg "WARN" "No active high-level firewall (FirewallD or UFW) detected."
+        echo -e "${COLOR_ORANGE}================================================================================${COLOR_RESET}"
+        read -rp "Proceed with these changes? [y/N]: " CONFIRM_INPUT
+        if [[ "${CONFIRM_INPUT,,}" != "y" ]]; then
+            log_msg "WARN" "Operation canceled by user."
+            return 1
+        fi
     fi
+    return 0
+}
 
-    echo -e "\n${COLOR_CYAN}Active Host Listening Ports (TCP/UDP):${COLOR_RESET}"
+view_rules() {
+    print_banner "CURRENT FIREWALL RULES & STATUS"
+    ufw status verbose
+    echo ""
+}
+
+add_rule() {
+    print_banner "ADD FIREWALL RULE"
+    read -rp "Enter port number to open (e.g. 8096): " PORT
+    validate_string "$PORT" "port" || return 1
+
+    read -rp "Enter protocol [tcp/udp] (leave blank for both): " PROTO
+
+    local target_spec="$PORT"
+    [[ -n "$PROTO" ]] && target_spec="${PORT}/${PROTO}"
+
+    confirm_action "Add Allow Rule" "$target_spec" "Allow incoming traffic on port $target_spec" "false" || return 0
+
+    backup_firewall_rules
+    if [[ -n "$PROTO" ]]; then
+        ufw allow "$PORT/$PROTO"
+    else
+        ufw allow "$PORT"
+    fi
+    ufw reload
+    log_msg "INFO" "Firewall rule added for ${target_spec}."
+}
+
+delete_rule() {
+    print_banner "DELETE FIREWALL RULE"
+    ufw status numbered
+    echo ""
+    read -rp "Enter rule number to delete: " RULE_NUM
+    validate_string "$RULE_NUM" "rule number" || return 1
+
+    confirm_action "Delete Rule" "Rule #$RULE_NUM" "Remove UFW rule entry #$RULE_NUM" "true" || return 0
+
+    backup_firewall_rules
+    ufw --force delete "$RULE_NUM"
+    ufw reload
+    log_msg "INFO" "Firewall rule #${RULE_NUM} deleted."
+}
+
+audit_listening_sockets() {
+    print_banner "ACTIVE LISTENING SOCKETS AUDIT"
     if command -v ss &>/dev/null; then
-        ss -tulpn | grep LISTEN | sed 's/^/  /'
+        ss -tulpn | grep LISTEN || true
+    else
+        netstat -tulpn | grep LISTEN || true
     fi
     echo ""
 }
 
-# Docbloc: Synchronize open firewall ports directly from Docker Compose files
-sync_docker_firewall_ports() {
-    print_banner "SYNC DOCKER COMPOSE PORTS TO FIREWALL"
+main_menu() {
+    while true; do
+        print_banner "FIREWALL MANAGER MENU"
+        echo "1) View Firewall Rules & Status"
+        echo "2) Add Port Allow Rule"
+        echo "3) Delete Firewall Rule by Number"
+        echo "4) Audit Active Listening Sockets"
+        echo "5) Backup Firewall Rules"
+        echo "6) Exit"
+        read -rp "Select Option [1-6]: " CHOICE
 
-    local compose_base
-    compose_base=$(read_json_config "$CONFIG_JSON" '.system.docker_compose_dir // "/var/local/server-configs/docker"')
+        case "$CHOICE" in
+            1) view_rules ;;
+            2) add_rule ;;
+            3) delete_rule ;;
+            4) audit_listening_sockets ;;
+            5) backup_firewall_rules ;;
+            6) log_msg "INFO" "Exiting Firewall Manager."; exit 0 ;;
+            *) log_msg "ERROR" "Invalid choice." ;;
+        esac
+    done
+}
 
-    if [[ ! -d "$compose_base" && -d "$HOME/docker" ]]; then
-        compose_base="$HOME/docker"
-    fi
-
-    if [[ ! -d "$compose_base" ]]; then
-        log_msg "ERROR" "Docker Compose directory '${compose_base}' does not exist."
-        return 1
-    fi
-
-    backup_firewall_rules
-    log_msg "INFO" "Scanning Compose files in '${compose_base}' for exposed ports..."
-
-    # Extract exposed host ports using python or regex
-    local ports_found
-    ports_found=$(python3 - <<EOF 
+main_menu
