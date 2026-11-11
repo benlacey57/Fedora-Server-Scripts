@@ -1,0 +1,25 @@
+# --- Base Utilities & Tools ---
+curl
+wget
+git
+tmux
+stow
+jq
+btop
+rsync
+
+# --- Encryption & Filesystem Tools ---
+cryptsetup
+sshfs
+fuse
+
+# --- Security & Antivirus ---
+fail2ban
+clamav
+clamav-update
+dnf-automatic
+
+# --- Python Dependencies ---
+python3
+python3-pip
+python3-PyYAML
