@@ -1,0 +1,14 @@
+{
+  "hostname": "fedora-homelab",
+  "dnf": {
+    "max_parallel_downloads": 10,
+    "fastestmirror": true,
+    "deltarpm": false
+  },
+  "maintenance": {
+    "systemd_log_retention_days": 7,
+    "docker_log_max_file_size": "1GB",
+    "docker_log_max_files": "3",
+    "autoclean_packages": true
+  }
+}
