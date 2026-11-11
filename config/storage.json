@@ -1,0 +1,24 @@
+{
+  "storage_devices": [
+    {
+      "label": "media",
+      "device_path": "/dev/disk/by-uuid/YOUR-12TB-UUID",
+      "mapper_name": "media_encrypted",
+      "mount_point": "/mnt/storage",
+      "filesystem": "ext4",
+      "options": "noatime,errors=remount-ro"
+    },
+    {
+      "label": "backup",
+      "device_path": "/dev/disk/by-uuid/YOUR-6TB-UUID",
+      "mapper_name": "",
+      "mount_point": "/mnt/backup",
+      "filesystem": "ext4",
+      "options": "defaults,noatime"
+    }
+  ],
+  "monitoring": {
+    "smart_enabled": true,
+    "check_interval_hours": 24
+  }
+}
