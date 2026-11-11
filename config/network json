@@ -1,0 +1,21 @@
+{
+  "interfaces": {
+    "primary_interface": "eth0",
+    "dns_servers": [
+      "1.1.1.1",
+      "8.8.8.8",
+      "9.9.9.9"
+    ]
+  },
+  "diagnostics": {
+    "ping_targets": [
+      "1.1.1.1",
+      "8.8.8.8"
+    ],
+    "dns_lookup_domains": [
+      "google.com",
+      "github.com",
+      "cloudflare.com"
+    ]
+  }
+}
