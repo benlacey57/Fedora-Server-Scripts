@@ -96,3 +96,25 @@ read_json_config() {
     fi
     jq -r "$query" "$json_file"
 }
+
+# Docbloc: Normalize storage sizes (MB/GB) into Docker daemon format (e.g. 100m, 1g)
+format_docker_log_size() {
+    local raw_input="$1"
+    local default_value="${2:-50m}"
+
+    # Remove whitespace and convert to lowercase
+    local clean_input
+    clean_input=$(echo "$raw_input" | tr -d ' ' | tr '[:upper:]' '[:lower:]')
+
+    if [[ "$clean_input" =~ ^([0-9]+)(gb|g)$ ]]; then
+        echo "${BASH_REMATCH[1]}g"
+    elif [[ "$clean_input" =~ ^([0-9]+)(mb|m)$ ]]; then
+        echo "${BASH_REMATCH[1]}m"
+    elif [[ "$clean_input" =~ ^[0-9]+$ ]]; then
+        # Default numeric-only entries to MB
+        echo "${clean_input}m"
+    else
+        log_msg "WARN" "Invalid log size format '${raw_input}'. Defaulting to ${default_value}."
+        echo "$default_value"
+    fi
+}
