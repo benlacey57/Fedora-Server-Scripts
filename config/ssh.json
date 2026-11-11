@@ -1,0 +1,15 @@
+{
+  "ssh_daemon": {
+    "port": 22,
+    "permit_root_login": "no",
+    "password_authentication": "no",
+    "pubkey_authentication": "yes",
+    "max_auth_tries": 3,
+    "allow_tcp_forwarding": "no",
+    "x11_forwarding": "no"
+  },
+  "key_defaults": {
+    "key_type": "ed25519",
+    "key_size_bits": 4096
+  }
+}
