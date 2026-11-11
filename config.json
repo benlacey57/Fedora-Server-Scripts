@@ -7,6 +7,25 @@
     "gateway": "192.168.1.1",
     "dns_servers": ["1.1.1.1", "8.8.8.8"]
   },
+  "git": {
+    "user_name": "Your Name",
+    "user_email": "your.email@example.com",
+    "default_branch": "main"
+  },
+  "cron_tasks": [
+    {
+      "name": "weekly_system_scan",
+      "schedule": "0 2 * * 0",
+      "command": "/usr/local/bin/scan-system --quiet >/dev/null 2>&1",
+      "description": "Weekly OS security scan every Sunday at 02:00 AM"
+    },
+    {
+      "name": "monthly_external_scan",
+      "schedule": "0 4 1 * *",
+      "command": "/usr/local/bin/scan-drives --quiet >/dev/null 2>&1",
+      "description": "Monthly external drive scan on the 1st of every month at 04:00 AM"
+    }
+  ],
   "dnf": {
     "max_parallel_downloads": 10,
     "fastestmirror": true,
