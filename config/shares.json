@@ -1,0 +1,90 @@
+{
+  "nfs_exports": [
+    {
+      "path": "/mnt/storage/media/tv",
+      "allowed_subnet": "192.168.0.0/24",
+      "restricted_user": "",
+      "options": "ro,sync,no_subtree_check,all_squash"
+    },
+    {
+      "path": "/mnt/storage/media/movies",
+      "allowed_subnet": "192.168.0.0/24",
+      "restricted_user": "",
+      "options": "ro,sync,no_subtree_check,all_squash"
+    },
+    {
+      "path": "/mnt/storage/media/music",
+      "allowed_subnet": "192.168.0.0/24",
+      "restricted_user": "",
+      "options": "ro,sync,no_subtree_check,all_squash"
+    },
+    {
+      "path": "/mnt/storage/media/games",
+      "allowed_subnet": "192.168.0.0/24",
+      "restricted_user": "",
+      "options": "ro,sync,no_subtree_check,all_squash"
+    },
+    {
+      "path": "/mnt/storage/media/photos",
+      "allowed_subnet": "192.168.0.0/24",
+      "restricted_user": "",
+      "options": "ro,sync,no_subtree_check,all_squash"
+    },
+    {
+      "path": "/mnt/storage/downloads",
+      "allowed_subnet": "192.168.0.0/24",
+      "restricted_user": "",
+      "options": "ro,sync,no_subtree_check,all_squash"
+    }
+  ],
+  "samba_shares": [
+    {
+      "name": "TV",
+      "path": "/mnt/storage/media/tv",
+      "read_only": true,
+      "guest_ok": true,
+      "browseable": true,
+      "valid_users": ""
+    },
+    {
+      "name": "Movies",
+      "path": "/mnt/storage/media/movies",
+      "read_only": true,
+      "guest_ok": true,
+      "browseable": true,
+      "valid_users": ""
+    },
+    {
+      "name": "Music",
+      "path": "/mnt/storage/media/music",
+      "read_only": true,
+      "guest_ok": true,
+      "browseable": true,
+      "valid_users": ""
+    },
+    {
+      "name": "Games",
+      "path": "/mnt/storage/media/games",
+      "read_only": true,
+      "guest_ok": true,
+      "browseable": true,
+      "valid_users": ""
+    },
+    {
+      "name": "Photos",
+      "path": "/mnt/storage/media/photos",
+      "read_only": true,
+      "guest_ok": true,
+      "browseable": true,
+      "valid_users": ""
+    },
+    {
+      "name": "Downloads",
+      "path": "/mnt/storage/downloads",
+      "read_only": true,
+      "guest_ok": true,
+      "browseable": true,
+      "valid_users": ""
+    }
+  ]
+}
