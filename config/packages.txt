@@ -1,25 +1,60 @@
-# --- Base Utilities & Tools ---
-curl
-wget
-git
-tmux
-stow
-jq
-btop
-rsync
+# ==============================================================================
+# Master Package Configuration File
+# ==============================================================================
 
-# --- Encryption & Filesystem Tools ---
-cryptsetup
-sshfs
-fuse
+# --- Base System Utilities & CLI Tools ---
+curl                # Command-line tool for transferring data with URLs (downloads, API calls)
+wget                # Network utility to retrieve files via HTTP, HTTPS, and FTP
+git                 # Distributed version control system for scripts and dotfiles repository management
+tmux                # Terminal multiplexer for persistent long-running background terminal sessions
+stow                # GNU Stow symlink farm manager for managing dotfiles and script configurations
+jq                  # Command-line JSON processor for parsing configuration files and API payloads
+btop                # Modern interactive terminal resource, process, and system monitor
+rsync               # Incremental file transfer and synchronization utility for media backups
 
-# --- Security & Antivirus ---
-fail2ban
-clamav
-clamav-update
-dnf-automatic
+# --- Hard Drive, Storage & Encryption Tools ---
+cryptsetup          # LUKS disk encryption management for secure secondary storage drives
+sshfs               # FUSE client for mounting remote directories over SSH (NAS integration)
+fuse                # Filesystem in Userspace framework enabling non-root network mounts
+smartmontools       # S.M.A.R.T. disk health monitoring daemon and diagnostic utilities (smartctl/smartd)
+nvme-cli            # Native NVMe drive health monitoring, endurance tracking, and management utility
+hdparm              # SATA/IDE drive parameters, power management, and spin-down settings manager
+sdparm              # SCSI/SAS drive parameters, power diagnostics, and mode page editor
+e2fsprogs           # ext2/ext3/ext4 filesystem administration, check, and repair tools
+xfsprogs            # XFS filesystem creation, repair, and administration utilities
+btrfs-progs         # Btrfs filesystem creation, inspection, and repair tools
+parted              # Command-line partition table manipulation tool
+gdisk               # GPT partition table manipulation and repair utility
+lsscsi              # SCSI, SATA, and NVMe device listing and topology display tool
+ddrescue            # Data recovery tool for salvaging data from damaged or failing hard drives
 
-# --- Python Dependencies ---
-python3
-python3-pip
-python3-PyYAML
+# --- Security & Service Engines ---
+fail2ban            # Intrusion prevention framework monitoring system logs and banning malicious IPs
+clamav              # Open-source antivirus engine for scanning incoming media files
+clamav-update       # FreshClam automated virus signature database updater
+dnf-automatic       # Automated DNF system security update downloader and installer
+
+# --- Python Environment Dependencies ---
+python3             # Python 3 interpreter for provisioning orchestrators and CLI tools
+python3-pip         # Python package installer for installing PyYAML, Rich, and other libraries
+python3-PyYAML      # Python library for reading and parsing YAML configuration files
+
+# --- System Performance & Resource Monitoring ---
+htop                # Interactive process viewer and system resource monitor
+iotop-c             # Real-time top-like utility for tracking per-process I/O usage
+glances             # Cross-platform CLI system monitoring tool with web interface capabilities
+lm_sensors          # Hardware temperature, fan speed, and voltage monitoring utility
+sysstat             # Performance monitoring collection tools (iostat, mpstat, pidstat, sar)
+fio                 # Flexible I/O tester for benchmarking hard drive and array performance
+ncdu                # NCurses disk usage analyzer for locating large files and disk bloat
+
+# --- Media Server & Hardware Transcoding Support ---
+ffmpeg              # Multimedia framework for video transcoding, remuxing, and hardware encoding
+libva-utils         # VA-API hardware video acceleration diagnostic tools (e.g., vainfo)
+intel-media-driver  # Intel QSV / VA-API hardware transcoding driver for modern Intel iGPUs
+pciutils            # Hardware diagnostic utility for inspecting PCI devices (lspci)
+usbutils            # Utility for listing and inspecting attached USB devices (lsusb)
+nfs-utils           # NFS kernel server and client mounting utilities
+samba               # Samba SMB file server daemon for local network share exports
+samba-client        # Samba client programs for browsing and testing SMB shares
+cifs-utils          # CIFS filesystem mounting utilities for external Samba shares
