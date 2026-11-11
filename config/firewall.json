@@ -1,0 +1,18 @@
+{
+  "default_policy": {
+    "incoming": "deny",
+    "outgoing": "allow"
+  },
+  "allowed_ports": [
+    {"port": 22, "protocol": "tcp", "label": "SSH System Access"},
+    {"port": 80, "protocol": "tcp", "label": "HTTP Web Traffic"},
+    {"port": 443, "protocol": "tcp", "label": "HTTPS Web Traffic"},
+    {"port": 8096, "protocol": "tcp", "label": "Jellyfin Media Server"},
+    {"port": 8989, "protocol": "tcp", "label": "Sonarr TV Series Manager"},
+    {"port": 7878, "protocol": "tcp", "label": "Radarr Movies Manager"},
+    {"port": 9696, "protocol": "tcp", "label": "Prowlarr Indexer Manager"},
+    {"port": 8080, "protocol": "tcp", "label": "qBittorrent Web UI"},
+    {"port": 6881, "protocol": "tcp", "label": "qBittorrent Torrent Peer TCP"},
+    {"port": 6881, "protocol": "udp", "label": "qBittorrent Torrent Peer UDP"}
+  ]
+}
