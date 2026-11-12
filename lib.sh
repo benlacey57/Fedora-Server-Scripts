@@ -62,6 +62,43 @@ check_dependency() {
     fi
 }
 
+# ==============================================================================
+# Security & Encryption Helpers
+# ==============================================================================
+SECRET_KEY_PATH="/home/media/secret.key"
+init_secret_key() {
+    if [[ ! -f "$SECRET_KEY_PATH" ]]; then
+        mkdir -p "$(dirname "$SECRET_KEY_PATH")"
+        openssl rand -hex 32 > "$SECRET_KEY_PATH"
+        chmod 600 "$SECRET_KEY_PATH"
+        chown root:root "$SECRET_KEY_PATH"
+    fi
+}
+
+encrypt_string() {
+    local plaintext="$1"
+    init_secret_key
+    if [[ -z "$plaintext" ]]; then
+        echo ""
+        return 0
+    fi
+    local key
+    key=$(cat "$SECRET_KEY_PATH")
+    echo -n "$plaintext" | openssl enc -aes-256-cbc -a -salt -pass "pass:$key" 2>/dev/null
+}
+
+decrypt_string() {
+    local ciphertext="$1"
+    init_secret_key
+    if [[ -z "$ciphertext" ]]; then
+        echo ""
+        return 0
+    fi
+    local key
+    key=$(cat "$SECRET_KEY_PATH")
+    echo -n "$ciphertext" | openssl enc -d -aes-256-cbc -a -pass "pass:$key" 2>/dev/null || echo ""
+}
+
 # Docbloc: Input Validation - Validate String alphanumeric with underscores/hyphens
 # Arguments: $1 = Value, $2 = Field Name
 validate_string() {
