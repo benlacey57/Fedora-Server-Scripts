@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # Script: setup-github.sh
-# Description: Configures Git globals and installs the GitHub CLI tool using config/github.json
+# Description: Configures Git, installs GitHub CLI, and clones target homelab repositories
 # ==============================================================================
 
 set -euo pipefail
@@ -34,7 +34,7 @@ log_github_event() {
     echo "[${timestamp}] [${level}] ${msg}" | tee -a "$CUSTOM_LOG_FILE"
 }
 
-print_banner "GITHUB & GIT CONFIGURATION"
+print_banner "GITHUB & REPOSITORY SETUP"
 
 if [[ ! -f "$GITHUB_JSON" ]]; then
     log_github_event "ERROR" "Configuration file ${GITHUB_JSON} not found."
@@ -64,8 +64,27 @@ if [[ "$INSTALL_GH" == "true" ]]; then
     else
         log_github_event "INFO" "GitHub CLI (gh) is already installed."
     fi
-else
-    log_github_event "INFO" "GitHub CLI installation is disabled in configuration."
 fi
 
-print_banner "GITHUB & GIT SETUP COMPLETE"
+# 4. Clone or update repositories defined in config
+print_banner "CLONING CONFIGURED HOMELAB REPOSITORIES"
+repo_count=$(jq '.repositories | length' "$GITHUB_JSON")
+
+for ((i=0; i<repo_count; i++)); do
+    repo_name=$(jq -r ".repositories[$i].name" "$GITHUB_JSON")
+    repo_url=$(jq -r ".repositories[$i].url" "$GITHUB_JSON")
+    output_dir=$(jq -r ".repositories[$i].output_dir" "$GITHUB_JSON")
+
+    log_github_event "INFO" "Processing repository: ${repo_name} (${repo_url})"
+    
+    if [[ -d "${output_dir}/.git" ]]; then
+        log_github_event "INFO" "Repository directory ${output_dir} already exists. Pulling latest updates..."
+        git -C "$output_dir" pull origin "$GIT_BRANCH" || log_github_event "WARN" "Failed to pull updates for ${repo_name}"
+    else
+        mkdir -p "$(dirname "$output_dir")"
+        log_github_event "INFO" "Cloning ${repo_name} into ${output_dir}..."
+        git clone "$repo_url" "$output_dir" || log_github_event "ERROR" "Failed to clone ${repo_name}"
+    fi
+done
+
+print_banner "GITHUB & REPOSITORY SETUP COMPLETE"
