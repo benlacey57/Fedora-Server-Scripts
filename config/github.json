@@ -9,7 +9,26 @@
     "install": true,
     "extension_packages": []
   },
-  "repositories": {
-    "repo-name": "https..."
-  }
+  "repositories": {   
+    {
+      "name": "duplicati",
+      "url": "https://github.com/duplicati/duplicati.git",
+      "output_dir": "/opt/homelab/repos/duplicati"
+    },
+    {
+      "name": "restic",
+      "url": "https://github.com/restic/restic.git",
+      "output_dir": "/opt/homelab/repos/restic"
+    },
+    {
+      "name": "kopia",
+      "url": "https://github.com/kopia/kopia.git",
+      "output_dir": "/opt/homelab/repos/kopia"
+    },
+    {
+      "name": "vaultwarden",
+      "url": "https://github.com/dani-garcia/vaultwarden.git",
+      "output_dir": "/opt/homelab/repos/vaultwarden"
+    },
+  },
 }
