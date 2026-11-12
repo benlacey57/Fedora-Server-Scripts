@@ -1,0 +1,15 @@
+{
+  "containers": {
+    "jellyfin": "lscr.io/linuxserver/jellyfin:latest",
+    "qbittorrent": "lscr.io/linuxserver/qbittorrent:latest",
+    "sonarr": "lscr.io/linuxserver/sonarr:latest",
+    "radarr": "lscr.io/linuxserver/radarr:latest",
+    "prowlarr": "lscr.io/linuxserver/prowlarr:latest",
+    "homeassistant": "ghcr.io/home-assistant/home-assistant:stable",
+    "adguardhome": "adguard/adguardhome:latest",
+    "caddy": "caddy:latest",
+    "grafana": "grafana/grafana-oss:latest",
+    "homarr": "ghcr.io/ajnart/homarr:latest",
+    "vaultwarden": "vaultwarden/server:latest"
+  }
+}
