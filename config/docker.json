@@ -5,19 +5,23 @@
   },
   "defaults": {
     "restart_policy": "unless-stopped",
-    "shared_data_path": "/mnt/storage/data"
+    "shared_data_path": "/mnt/storage/docker"
   },
   "containers": {
-    "jellyfin": "lscr.io/linuxserver/jellyfin:latest",
     "qbittorrent": "lscr.io/linuxserver/qbittorrent:latest",
+    "gluetun": "qmcgaw/gluetun:latest",
     "sonarr": "lscr.io/linuxserver/sonarr:latest",
     "radarr": "lscr.io/linuxserver/radarr:latest",
+    "lidarr": "lscr.io/linuxserver/lidarr:latest",
+    "readarr": "lscr.io/linuxserver/readarr:latest",
+    "bazarr": "lscr.io/linuxserver/bazarr:latest",
     "prowlarr": "lscr.io/linuxserver/prowlarr:latest",
-    "homeassistant": "ghcr.io/home-assistant/home-assistant:stable",
-    "adguardhome": "adguard/adguardhome:latest",
-    "caddy": "caddy:latest",
-    "grafana": "grafana/grafana-oss:latest",
-    "homarr": "ghcr.io/ajnart/homarr:latest",
-    "vaultwarden": "vaultwarden/server:latest"
+    "overseerr": "sctx/overseerr:latest",
+    "tautulli": "lscr.io/linuxserver/tautulli:latest",
+    "nginx-proxy-manager": "jc21/nginx-proxy-manager:latest",
+    "traefik": "traefik:v3.3",
+    "ntfy": "binwiederhier/ntfy:latest",
+    "vaultwarden": "vaultwarden/server:latest",
+    "filebrowser": "filebrowser/filebrowser:latest"
   }
 }
