@@ -1,0 +1,15 @@
+{
+  "git": {
+    "user_name": "Ben Lacey",
+    "user_email": "ben.lacey57@gmail.com",
+    "default_branch": "main",
+    "init_repo": true
+  },
+  "github_cli": {
+    "install": true,
+    "extension_packages": []
+  },
+  "repositories": {
+    "repo-name": "https..."
+  }
+}
