@@ -1,4 +1,12 @@
 {
+  "network": {
+    "bridge_name": "homelab",
+    "subnet": "172.20.0.0/16"
+  },
+  "defaults": {
+    "restart_policy": "unless-stopped",
+    "shared_data_path": "/mnt/storage/data"
+  },
   "containers": {
     "jellyfin": "lscr.io/linuxserver/jellyfin:latest",
     "qbittorrent": "lscr.io/linuxserver/qbittorrent:latest",
