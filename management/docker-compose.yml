@@ -1,0 +1,56 @@
+version: "3.8"
+
+services:
+  pihole:
+    image: pihole/pihole:latest
+    container_name: pihole
+    environment:
+      - TZ=${TZ}
+      - WEBPASSWORD=${PIHOLE_WEBPASSWORD}
+    volumes:
+      - ${STORAGE_PATH}/appdata/pihole/etc-pihole:/etc/pihole
+      - ${STORAGE_PATH}/appdata/pihole/etc-dnsmasq.d:/etc/dnsmasq.d
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "${PORT_PIHOLE_WEB}:80"
+    networks:
+      - app-net
+    labels:
+      - caddy=pihole.${LOCAL_DOMAIN}
+      - caddy.reverse_proxy={{upstreams 80}}
+    restart: unless-stopped
+
+  owncloud:
+    image: owncloud/server:latest
+    container_name: owncloud
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - OWNCLOUD_DOMAIN=${OWNCLOUD_DOMAIN}
+    volumes:
+      - ${STORAGE_PATH}/appdata/owncloud:/var/www/owncloud
+      - ${STORAGE_PATH}/owncloud-files:/mnt/data/files
+    networks:
+      - app-net
+    labels:
+      - caddy=${OWNCLOUD_DOMAIN}
+      - caddy.reverse_proxy={{upstreams ${PORT_OWNCLOUD}}}
+    restart: unless-stopped
+
+  dozzle:
+    image: amir20/dozzle:latest
+    container_name: dozzle
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - app-net
+    labels:
+      - caddy=dozzle.${LOCAL_DOMAIN}
+      - caddy.reverse_proxy={{upstreams 8080}}
+    restart: unless-stopped
+
+networks:
+  app-net:
+    external: true

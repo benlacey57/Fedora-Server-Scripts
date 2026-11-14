@@ -1,0 +1,25 @@
+version: "3.8"
+
+services:
+  gluetun:
+    image: qmcgaw/gluetun:latest
+    container_name: gluetun
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    environment:
+      - VPN_SERVICE_PROVIDER=${VPN_SERVICE_PROVIDER}
+      - VPN_TYPE=${VPN_TYPE}
+      - WIREGUARD_PRIVATE_KEY=${VPN_WG_KEY}
+      - WIREGUARD_ADDRESSES=${VPN_WG_IP}
+    ports:
+      - "${PORT_QBITTORRENT}:8080"
+      - "${PORT_SABNZBD}:8085"
+    networks:
+      - app-net
+
+networks:
+  app-net:
+    external: true

@@ -1,0 +1,97 @@
+{
+  "network": {
+    "hostname": "homelab",
+    "interface": "eth0",
+    "static_ip": "192.168.0.200",
+    "subnet_cidr": 24,
+    "gateway": "192.168.1.1",
+    "dns_servers": ["1.1.1.1", "8.8.8.8"]
+  },
+  "dnf": {
+    "max_parallel_downloads": 10,
+    "fastestmirror": true,
+    "deltarpm": false,
+    "defaultyes": true
+  },
+  "packages": [
+    "ffmpeg",
+    "HandBrake-CLI",
+    "tailscale",
+    "mediainfo",
+    "ImageMagick",
+    "sox",
+    "tmux",
+    "stow",
+    "jq",
+    "btop",
+    "git",
+    "gh",
+    "rsync",
+    "cryptsetup",
+    "sshfs",
+    "fuse",
+    "zsh",
+    "ripgrep",
+    "fzf",
+    "bat",
+    "eza",
+    "fd-find",
+    "smartmontools",
+    "hdparm",
+    "fail2ban",
+    "clamav",
+    "clamav-update",
+    "ffmpeg", 
+    "HandBrake-CLI",
+    "python3",
+    "python3-pip"
+  ],
+  "pip_packages": [
+    "rich",
+    "PyYAML",
+    "requests"
+  ],
+  "github_repos": [
+    {
+      "name": "ashim",
+      "url": "https://github.com/wheetazlab/ashim",
+      "description": "System monitoring and diagnostic suite for Linux hosts."
+    },
+    {
+      "name": "sigwood",
+      "url": "https://github.com/helixmap/sigwood",
+      "description": "Log analysis and signature processing tool."
+    },
+    {
+      "name": "veloxdb",
+      "url": "https://github.com/veloxbase/veloxdb",
+      "description": "High-performance embedded key-value database engine."
+    },
+    {
+      "name": "filebrowser",
+      "url": "https://github.com/gtsteffaniak/filebrowser",
+      "description": "Web-based file management interface for server storage."
+    },
+    {
+      "name": "dashbeam",
+      "url": "https://github.com/tonyantony300/dashbeam",
+      "description": "Lightweight web dashboard for monitoring server metrics."
+    },
+    {
+      "name": "contrack",
+      "url": "https://github.com/arvarik/contrack",
+      "description": "Container network traffic tracking and connection monitor."
+    },
+    {
+      "name": "dossier",
+      "url": "https://github.com/AienTech/dossier",
+      "description": "Automated system profiling and documentation generator."
+    }
+  ],
+  "system": {
+    "tools_base_dir": "/home/media/tools",
+    "scripts_dir": "/home/media/scripts",
+    "storage_dir": "/mnt/storage",
+    "backup_dir": "/mnt/backup"
+  }
+}

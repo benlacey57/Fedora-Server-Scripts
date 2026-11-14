@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+/home/media/docker/scripts/vpn/vpn-status.sh "$@"

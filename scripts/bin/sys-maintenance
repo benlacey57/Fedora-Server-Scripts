@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [ "$EUID" -ne 0 ]; then
+    echo "⚠️  Please run as root (sudo)." >&2
+    exit 1
+fi
+
+echo "--> System Memory & Uptime Summary"
+free -h
+echo ""
+
+echo "--> Cleaning DNF/APT Package Cache..."
+if command -v dnf &>/dev/null; then
+    dnf autoremove -y -q
+    dnf clean all -q
+elif command -v apt-get &>/dev/null; then
+    apt-get autoremove -y -qq
+    apt-get clean -qq
+fi
+
+echo "--> Pruning Unused Docker Resources..."
+docker system prune -f --volumes
+
+echo "--> Truncating Docker Container Logs > 50MB..."
+find /var/lib/docker/containers/ -type f -name "*-json.log" -size +50M -exec truncate -s 0 {} + 2>/dev/null || true
+
+echo "--> Clearing systemd Journal Logs Older Than 7 Days..."
+journalctl --vacuum-time=7d >/dev/null
+
+echo "✅ Server maintenance complete."

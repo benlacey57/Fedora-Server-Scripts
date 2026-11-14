@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "=== Open TCP/UDP Sockets & Listening Ports ==="
+sudo ss -tulpn | grep LISTEN
+
+echo -e "\n=== Docker Published Port Mappings ==="
+docker ps --format "table {{.Names}}\t{{.Ports}}" 2>/dev/null || echo "Docker not running."
+
+echo -e "\n=== Media Stack Port Status ==="
+PORTS=("8989:Sonarr" "7878:Radarr" "9696:Prowlarr" "6767:Bazarr" "8096:Jellyfin" "8080:qBittorrent" "8085:SABnzbd")
+for pair in "${PORTS[@]}"; do
+    port="${pair%%:*}"
+    name="${pair#*:}"
+    if nc -z -w 1 127.0.0.1 "$port" 2>/dev/null; then
+        echo "  [OPEN] Port $port -> $name"
+    else
+        echo "  [CLOSED/DOWN] Port $port -> $name"
+    fi
+done

@@ -1,0 +1,15 @@
+version: "3.8"
+
+services:
+  sabnzbd:
+    image: lscr.io/linuxserver/sabnzbd:latest
+    container_name: sabnzbd
+    restart: unless-stopped
+    network_mode: "container:gluetun"
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ${STORAGE_PATH}/appdata/sabnzbd:/config
+      - ${DOWNLOADS_PATH}:/downloads

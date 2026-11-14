@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "=== Local Interfaces & IP Addresses ==="
+ip -brief addr show
+
+echo -e "\n=== Routing Table & Gateways ==="
+ip route
+
+echo -e "\n=== Active DNS Resolvers ==="
+grep -E "^nameserver" /etc/resolv.conf || echo "No nameservers found."
+
+echo -e "\n=== WAN & DNS Resolution Test ==="
+for domain in "google.com" "cloudflare.com"; do
+    if dig +short "$domain" >/dev/null 2>&1; then
+        echo "  [OK] Resolved $domain"
+    else
+        echo "  [FAIL] Could not resolve $domain"
+    fi
+done
+
+if ping -c 2 1.1.1.1 >/dev/null 2>&1; then
+    echo "  [OK] ICMP WAN reachability active (1.1.1.1)"
+else
+    echo "  [FAIL] ICMP WAN reachability failed"
+fi

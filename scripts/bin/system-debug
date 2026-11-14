@@ -1,0 +1,209 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# Script: system-debug.sh
+# Description: Comprehensive Infrastructure Audit & Diagnostic Tool
+# ==============================================================================
+
+set -euo pipefail
+
+# Determine base paths
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+REPORTS_DIR="${ROOT_DIR}/reports"
+ENV_FILE="${ROOT_DIR}/.env"
+
+TIMESTAMP=$(date +"%Y-%m-%d_%H%M%S")
+REPORT_FILE="${REPORTS_DIR}/audit_${TIMESTAMP}.report.txt"
+
+mkdir -p "$REPORTS_DIR"
+
+# Colors for terminal output
+COLOR_GREEN='\033[0;32m'
+COLOR_RED='\033[0;31m'
+COLOR_ORANGE='\033[0;33m'
+COLOR_CYAN='\033[0;36m'
+COLOR_RESET='\033[0m'
+
+print_section() {
+    echo "=================================================================="
+    echo "  $1"
+    echo "=================================================================="
+}
+
+# Run all checks and pipe terminal output simultaneously into the timestamped report (stripping ANSI colors)
+{
+    print_section "HOMELAB INFRASTRUCTURE DIAGNOSTIC REPORT"
+    echo "Generated At : $(date)"
+    echo "Host Root    : ${ROOT_DIR}"
+    echo ""
+
+    # 1. ENV & CONFIGURATION VALIDATION
+    print_section "1. ENVIRONMENT & CONFIGURATION (.env) VALIDATION"
+    if [[ -f "$ENV_FILE" ]]; then
+        echo -e "[${COLOR_GREEN}PASS${COLOR_RESET}] .env file found at ${ENV_FILE}"
+        
+        # Check mandatory keys
+        MANDATORY_KEYS=("DOMAIN" "LOCAL_IP" "STORAGE_PATH" "PUID" "PGID" "TZ")
+        for key in "${MANDATORY_KEYS[@]}"; do
+            if grep -q "^${key}=" "$ENV_FILE"; then
+                val=$(grep "^${key}=" "$ENV_FILE" | cut -d'=' -f2-)
+                echo "  - ${key}: ${val}"
+            else
+                echo -e "  - [${COLOR_RED}MISSING${COLOR_RESET}] Key '${key}' not found in .env!"
+            fi
+        done
+    else
+        echo -e "[${COLOR_RED}FAIL${COLOR_RESET}] .env file NOT found at ${ENV_FILE}!"
+    fi
+    echo ""
+
+    # 2. PERMISSION CHECKS
+    print_section "2. PERMISSION & OWNERSHIP AUDIT"
+    echo "Checking script and docker directory permissions..."
+    if [[ -d "${ROOT_DIR}/scripts" ]]; then
+        script_perms=$(stat -c '%a %U:%G' "${ROOT_DIR}/scripts" 2>/dev/null || echo "Unknown")
+        echo "  - ${ROOT_DIR}/scripts permissions: ${script_perms}"
+    fi
+    if [[ -f "$ENV_FILE" ]]; then
+        env_perms=$(stat -c '%a %U:%G' "$ENV_FILE" 2>/dev/null || echo "Unknown")
+        echo "  - .env file permissions (should be restrictive): ${env_perms}"
+    fi
+    echo ""
+
+    # 3. SERVER & NETWORKING DETAILS
+    print_section "3. SERVER DETAILS & NETWORK CONFIGURATION"
+    echo "Hostname     : $(hostname)"
+    echo "OS Version   : $(lsb_release -ds 2>/dev/null || cat /etc/issue | head -n1)"
+    echo "Kernel       : $(uname -r)"
+    echo "Local IP     : $(hostname -I | awk '{print $1}')"
+    
+    PUB_IP=$(curl -s --max-time 3 https://ipinfo.io/ip 2>/dev/null || echo "Unavailable")
+    echo "External IP  : ${PUB_IP}"
+    echo ""
+
+    echo "--- Routing Table ---"
+    ip route
+    echo ""
+
+    echo "--- Active DNS Resolvers ---"
+    grep -E "^nameserver" /etc/resolv.conf || echo "No nameservers found."
+    echo ""
+
+    # 4. TAILSCALE STATUS
+    print_section "4. TAILSCALE VPN MESH STATUS"
+    if command -v tailscale &>/dev/null; then
+        tailscale status 2>/dev/null || echo "Tailscale daemon is installed but not connected or running."
+    else
+        echo "Tailscale is not installed on this host."
+    fi
+    echo ""
+
+    # 5. FIREWALL STATUS
+    print_section "5. FIREWALL STATUS & RULES"
+    if command -v ufw &>/dev/null; then
+        echo "--- UFW Status ---"
+        sudo ufw status verbose
+    elif command -v firewall-cmd &>/dev/null; then
+        echo "--- FirewallD Status ---"
+        sudo firewall-cmd --state
+        sudo firewall-cmd --list-all
+    else
+        echo "No active UFW or FirewallD detected."
+    fi
+    echo ""
+
+    # 6. DISK SPACE ON ALL MOUNTS
+    print_section "6. DISK SPACE & STORAGE MOUNTS"
+    df -h --output=target,fstype,size,used,avail,pcent | column -t
+    echo ""
+
+    # 7. INTERNET & DNS RESOLUTION TESTS
+    print_section "7. WAN CONNECTIVITY & DNS RESOLUTION"
+    for domain in "google.com" "cloudflare.com" "github.com"; do
+        if dig +short "$domain" >/dev/null 2>&1; then
+            echo -e "  [${COLOR_GREEN}OK${COLOR_RESET}] Resolved ${domain}"
+        else
+            echo -e "  [${COLOR_RED}FAIL${COLOR_RESET}] Could not resolve ${domain}"
+        fi
+    done
+
+    if ping -c 2 -W 2 1.1.1.1 >/dev/null 2>&1; then
+        echo -e "  [${COLOR_GREEN}OK${COLOR_RESET}] ICMP WAN reachability active (1.1.1.1)"
+    else
+        echo -e "  [${COLOR_RED}FAIL${COLOR_RESET}] ICMP WAN reachability failed"
+    fi
+    echo ""
+
+    # 8. DOCKER CONTAINERS & ARR STACK PORT CONNECTIVITY
+    print_section "8. DOCKER CONTAINERS & ARR STACK PROBING"
+    if systemctl is-active --quiet docker; then
+        echo "Docker Daemon: Running"
+        echo ""
+        echo "--- Active Containers ---"
+        docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" 2>/dev/null || echo "No running containers."
+        echo ""
+
+        echo "--- Arr Stack & Core Service Port Probes ---"
+        declare -A SERVICES=( 
+            ["Sonarr"]="8989" 
+            ["Radarr"]="7878" 
+            ["Prowlarr"]="9696" 
+            ["Bazarr"]="6767" 
+            ["Lidarr"]="8686" 
+            ["Readarr"]="8787" 
+            ["qBittorrent"]="8080" 
+            ["SABnzbd"]="8085"
+            ["Jellyfin"]="8096"
+            ["Pi-hole"]="53"
+        )
+
+        for svc in "${!SERVICES[@]}"; do
+            port="${SERVICES[$svc]}"
+            if nc -z -w 1 127.0.0.1 "$port" 2>/dev/null; then
+                echo -e "  [${COLOR_GREEN}OPEN${COLOR_RESET}] $svc (Port $port)"
+            else
+                echo -e "  [${COLOR_RED}CLOSED${COLOR_RESET}] $svc (Port $port)"
+            fi
+        done
+    else
+        echo "Docker daemon is stopped or inactive."
+    fi
+    echo ""
+
+    # 9. CADDY / REVERSE PROXY & SSL STATUS
+    print_section "9. REVERSE PROXY & SSL STATUS"
+    if docker ps --format '{{.Names}}' | grep -qE "caddy|traefik"; then
+        echo "Reverse proxy container detected running."
+        # Check cert volume/path if applicable
+        if [[ -d "/var/lib/docker/volumes" ]]; then
+            echo "Inspecting proxy data directories..."
+        fi
+    else
+        echo "No active Caddy or Traefik container detected via docker ps."
+    fi
+    echo ""
+
+    # 10. MULTI-LOG PARSING (ERRORS & WARNINGS)
+    print_section "10. RECENT SYSTEM & CONTAINER LOG ERRORS (Past 24 Hours)"
+    echo "--- Systemd Journal Errors ---"
+    sudo journalctl -p 3..3 --since "24 hours ago" --no-pager | tail -n 15 || echo "No critical journal errors."
+    echo ""
+
+    echo "--- Container Error Logs (Arr Stack & Proxies) ---"
+    CONTAINERS=$(docker ps --format "{{.Names}}" 2>/dev/null || true)
+    if [[ -n "$CONTAINERS" ]]; then
+        for c in $CONTAINERS; do
+            errs=$(docker logs --since 24h "$c" 2>&1 | grep -iE "error|exception|fatal" | tail -n 2 || true)
+            if [[ -n "$errs" ]]; then
+                echo "Container [$c]:"
+                echo "$errs"
+                echo "--------------------------------------------------"
+            fi
+        done
+    fi
+
+    print_section "END OF SYSTEM DIAGNOSTIC REPORT"
+
+} 2>&1 | tee >(sed -u -r 's/\x1B\[[0-9;]*[mK]//g' > "$REPORT_FILE")
+
+echo -e "\n${COLOR_GREEN}✅ Diagnostic audit complete! Report saved to:${COLOR_RESET} ${REPORT_FILE}"

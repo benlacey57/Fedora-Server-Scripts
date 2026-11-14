@@ -1,0 +1,15 @@
+version: "3.8"
+
+include:
+  - shared-network.yml
+  - proxy/docker-compose.yml
+  - management/docker-compose.yml
+  - arr/gluetun/docker-compose.yml
+  - arr/qbittorrent/docker-compose.yml
+  - arr/sabnzbd/docker-compose.yml
+  - arr/prowlarr/docker-compose.yml
+  - arr/sonarr/docker-compose.yml
+  - arr/radarr/docker-compose.yml
+  - arr/lidarr/docker-compose.yml
+  - arr/readarr/docker-compose.yml
+  - arr/bazarr/docker-compose.yml

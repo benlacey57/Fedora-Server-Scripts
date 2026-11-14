@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "=== Docker Daemon Status ==="
+systemctl is-active --quiet docker && echo "[OK] Docker daemon is running." || { echo "[FAIL] Docker daemon is stopped."; exit 1; }
+
+echo -e "\n=== Active Containers & Ports ==="
+docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" 2>/dev/null || echo "No running containers found."

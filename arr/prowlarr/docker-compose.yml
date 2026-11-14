@@ -1,0 +1,18 @@
+version: "3.8"
+
+services:
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    restart: unless-stopped
+    networks:
+      - app-net
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ${STORAGE_PATH}/appdata/prowlarr:/config
+    labels:
+      - "caddy=prowlarr.${LOCAL_DOMAIN}"
+      - "caddy.reverse_proxy={{upstreams ${PORT_PROWLARR}}}"
